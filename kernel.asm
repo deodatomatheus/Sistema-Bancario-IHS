@@ -436,6 +436,14 @@ seletor:
 
 ret
 
+
+pulaLinha:
+	mov al ,10
+	call putchar
+	mov al, 13
+	call putchar
+ret
+
 start:
 	xor ax, ax
 	mov ds, ax
