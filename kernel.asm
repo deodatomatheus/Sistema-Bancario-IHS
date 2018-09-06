@@ -383,7 +383,7 @@ debugMEM2:
 		jmp .prox
 		.normal:
 		mov al, '1'		
-		.prox
+		.prox:
 		call putchar
 	loop .inicio
 	call getchar; programa para, pra vc ver...
