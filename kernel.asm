@@ -18,6 +18,7 @@ jmp 0x0000:start
 	listar_agencias db '5 - LISTAR AGENCIAS', 13, 10, 0
 	listar_contas_de_uma_agencia db '6 - LISTAR CONTAS DE UMA AGENCIA', 13, 10, 0
 	comando_invalido db '!!COMANDO INVALIDO!!', 13, 10, 0
+
 ;-------AREA DE STRINGS CADASTRO
 	informacoes_cadastro db '--->>> Digite os dados a seguir <<<---', 13, 10, 0
 	digitar_nome db 'Nome do proprietario (max 20 char):', 13, 10, 0
@@ -31,7 +32,12 @@ jmp 0x0000:start
 	ger_dados times 10 db 0 ;gerencia o espaco de dados, funciona como um mapa de posicoes alocadas ou nao
 							;SE MUDAR O TAMNAHO PRECISA MUDAR TAMBEM EM 'alocar' E EM 'cadastro'
 	aux dw 0				;usado em cadastro para guardar o valor do lugar que foi alocado
+;------- BUSCA
+	digitar_cpf_busca db 'Digite o CPF para buscar', 13, 10, 0
+	conta_nao_encontrada db 'Conta nao encontrada', 13, 10, 0
+	cpf_busca times 12 db 0
 ;-----------------------------------------------------------------------------------------------------------
+
 
 cadastro:
 	call setVideoMode ;apagar o menu
@@ -103,12 +109,52 @@ cadastro:
 		stosw 
 		;	------------------------DEBUG-----------------------
 		;printa os dados dos usuarios
-		mov si, dados
-		call debugMEM
+		;mov si,dados
+		;call showAcc
 	.done:
 ret
 
 busca:
+	call setVideoMode  ;limpar a tela
+	;------------------------------LEITURA DO CPF DE BUSCA---------------------------------
+	mov si, digitar_cpf_busca
+	call printStr
+
+	mov di, cpf_busca  ; pegar cpf que sera usado na busca
+	mov bx, 11
+	call gets
+
+	mov bx, 11
+	call completa_com_0
+
+	;----------------------------BUSCA----------------------------------------
+
+	xor bx,bx
+	mov dl, 1
+	nextData:
+		cmp bx, 11
+		je notFound
+		cmp [ger_dados + bx], dl
+		inc bx
+		jne  nextData
+		
+	
+
+	
+
+	call seta_base
+	add di, 21                     ;aponta para local correto na estrutura
+	mov si, cpf_busca
+
+	notFound:
+		mov si, 
+
+
+
+
+
+
+		
 ret
 
 editar:
@@ -436,12 +482,50 @@ seletor:
 
 ret
 
+printInt: ;; printa o numero de 4 digitos apontados por si
+	lodsw
+	mov cx, 4
+	mov bl, 10
+	.continuar2:
+		div bl
+        add ah, '0'
+        push ax
+        xor ah,ah
+	loop .continuar2
 
-pulaLinha:
-	mov al ,10
-	call putchar
-	mov al, 13
-	call putchar
+    mov cx, 4
+    .continuar:
+		pop ax
+        mov al, ah
+        call putchar
+	loop .continuar
+	call endl
+ret
+
+showAcc:                ;Mostra acc apontada por si
+	mov cx, 33
+	pularLinha:
+		call endl
+		jmp .continua
+	.inicio:
+		cmp cx, 33-21
+	 	je pularLinha
+		
+		.continua:
+		lodsb
+		cmp al, 0
+		jne .normal
+		mov al, '-'
+		.normal:
+		call putchar
+		
+	loop .inicio
+	call endl
+	
+	
+	call printInt
+	call printInt
+	call getchar; programa para, pra vc ver...
 ret
 
 start:
