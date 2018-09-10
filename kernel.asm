@@ -114,6 +114,43 @@ cadastro:
 	.done:
 ret
 
+  
+busca:
+	call setVideoMode  ;limpar a tela
+	;------------------------------LEITURA DO CPF DE BUSCA---------------------------------
+	mov si, digitar_cpf_busca
+	call printStr
+
+	mov di, cpf_busca  ; pegar cpf que sera usado na busca
+	mov bx, 11
+	call gets
+
+	mov bx, 11
+	call completa_com_0
+
+	;----------------------------BUSCA---------------------------------------- [WIP]
+
+	xor bx,bx
+	mov dl, 1
+	nextData:
+		cmp bx, 11
+		je notFound
+		cmp [ger_dados + bx], dl
+		inc bx
+		jne  nextData
+		
+	
+
+	
+
+	call seta_base
+	add di, 21                     ;aponta para local correto na estrutura
+	mov si, cpf_busca
+
+	notFound:
+		mov si, conta_nao_encontrada
+	
+ret
 
 editar:
 ret
