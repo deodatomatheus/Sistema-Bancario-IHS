@@ -29,21 +29,30 @@ jmp 0x0000:start
 ;-------BANCO DE DADOS
 	dados times 370 db 0 ;banco de dados suficiente para 10 pessoas
 	numero dw 0
-	ger_dados times 10 db 0 ;gerencia o espaco de dados, funciona como um mapa de posicoes alocadas ou nao
-							;SE MUDAR O TAMNAHO PRECISA MUDAR TAMBEM EM 'alocar' E EM 'cadastro'
+	
+	 ;gerencia o espaco de dados, funciona como um mapa de posicoes alocadas ou nao
+							;SE MUDAR O TAMNAHO PRECISA MUDAR TAMBEM EM 'alocar' E EM 'cadastro'							
+							;usado no loop da funcao busca
 	aux dw 0				;usado em cadastro para guardar o valor do lugar que foi alocado
+	aux2 dw 0
 ;------- BUSCA
 	digitar_cpf_busca db 'Digite o CPF para buscar', 13, 10, 0
 	conta_nao_encontrada db 'Conta nao encontrada', 13, 10, 0
-	cpf_busca times 12 db 0
+	conta_busca dw 0
+	aux_busca dw 0
+	aux_busca_ger dw 0
+	aux_busca_dados dw 0
 ;-----------------------------------------------------------------------------------------------------------
 
-
+ger_dados times 10 db 0
 cadastro:
 	call setVideoMode ;apagar o menu
 
 	call alocar
-	mov [aux], cx											
+	mov word[aux], cx
+	call debugMEM2
+	call endl
+												
 	cmp cx, 10 									;TAMANHO DO BANCO DE DADOS
 	jle .valido
 		mov si, banco_cheio
@@ -53,6 +62,7 @@ cadastro:
 	.valido:
 		mov si, informacoes_cadastro
 		call printStr
+
 		;-------------------------------LEITURA NOME-------------------------------------------
 		mov si, digitar_nome
 		call printStr	
@@ -64,13 +74,14 @@ cadastro:
 
 		mov bx, 20	
 		call completa_com_0	;poe cl - bl * 0 na area apontada por di		
-		
+	
 		;--------------------------LEITURA CPF-------------------------------------------------
 		mov si, digitar_cpf	
 		call printStr
-		
+			
 		call seta_base
-
+		call debugMEM2
+		call endl
 		add di, 21				;setando a posicao correta na estrutura
 
 		mov bx, 11 				;tamanho do CPF
@@ -78,14 +89,15 @@ cadastro:
 
 		mov bx, 11				;setando a posicao correta da estrutura
 		call completa_com_0 	;poe cl - bl * 0 na area apontada por di
+		
 
 		;------------------------------LIUTURA CODIGO DA CONTA----------------------------------
 		; pegando os valores como 'inteiro' pra ser mais facil de procurar
 		mov si, digitar_cod_agencia
 		call printStr	
-
 		call getinteger; ler numero de 2 bytes ***O RESULTADO FICA EM AX, CUIDADO COM ESSA PORRA, QUASE QUE ME MATO POR ISSO**
 						;porem, tambem fica numa variavel chamada 'numero'
+		
 		call seta_base
 
 		add di, 33		;setando a posicao correta na estrutura
@@ -110,46 +122,62 @@ cadastro:
 		;	------------------------DEBUG-----------------------
 		;printa os dados dos usuarios
 		mov si,dados
-		call showAcc
+		;call showAcc
+
+		
+		call debugMEM
+	
 	.done:
 ret
 
   
 busca:
 	call setVideoMode  ;limpar a tela
-	;------------------------------LEITURA DO CPF DE BUSCA---------------------------------
-	mov si, digitar_cpf_busca
+	;------------------------------LEITURA DO CONTA PARA BUSCA---------------------------------
+	mov si, digitar_num_conta
 	call printStr
 
-	mov di, cpf_busca  ; pegar cpf que sera usado na busca
-	mov bx, 11
-	call gets
-
-	mov bx, 11
-	call completa_com_0
-
+	call getinteger
+	mov ax, [numero]
+	mov word[conta_busca], ax
+	
+	;call debugMEM2
+	
 	;----------------------------BUSCA---------------------------------------- [WIP]
+	;CHECANDO A INTEGRIDADE DO CAMPO
+	mov si, ger_dados
+	mov word[aux_busca_ger], si
 
-	xor bx,bx
-	mov dl, 1
-	nextData:
-		cmp bx, 11
-		je notFound
-		cmp [ger_dados + bx], dl
-		inc bx
-		jne  nextData
-		
+	mov cx, 0
+
+	.parser:
+		mov word[aux_busca], cx
+		mov si, word[aux_busca_ger]
+		lodsb
+		mov word[aux_busca_ger] ,si
+
+		cmp al, 1
+		jne .espaco_n_alocado
+			mov si, dados			 	
+			mov cx, word[aux_busca]
+			mov ax, 37
+			mul cx
+			add si, ax			
+			add si, 35
+			lodsw			
+			cmp ax, word[conta_busca]
+			jne .conta_diferente
+			sub si, 37
+			call showAcc
+			.conta_diferente:		
+		.espaco_n_alocado:
 	
+	mov cx, [aux_busca]
+	inc cx
+	cmp cx, 10	
+	jne .parser
 
-	
-
-	call seta_base
-	add di, 21                     ;aponta para local correto na estrutura
-	mov si, cpf_busca
-
-	notFound:
-		mov si, conta_nao_encontrada
-	
+	call getchar	
 ret
 
 editar:
@@ -166,7 +194,7 @@ ret
 
 seta_base:
 	mov di, dados 	
-	mov cx, [aux]
+	mov cx, word[aux]
 	mov ax, 37
 	mul cx
 	add di, ax
@@ -220,7 +248,7 @@ alocar: ;retorna a primeira posicao livre do ger_dados em cx
 		jne .inicio	;se a posicao esta ocupada, olha a proxima	
 		mov di, si
 		dec di
-		mov ax, 1	;se a posicao ta livre, entao aloca
+		mov al, 1	;se a posicao ta livre, entao aloca
 		stosb															
 	.fim:
 
@@ -402,19 +430,35 @@ ret
 
 debugMEM:
 	mov si, dados
-	mov cx, 111
+	mov cx, 37
+	mov [aux2], cx
+
+	mov cx, 8
+	mov [aux], cx
+
 	.inicio:
-		lodsb
-		cmp al, 0
-		jne .normal
-		mov al, '-'
-		.normal:
-		call putchar
+		mov [aux], cx
+		mov cx, [aux2]
+		.interno:
+			lodsb
+			cmp al, 0
+			jne .normal
+			mov al, '-'
+			.normal:
+			call putchar
+		loop .interno
 		
+		mov al, 13
+		call putchar
+		mov al, 10
+		call putchar
+		mov cx, [aux]
 	loop .inicio
 	call getchar; programa para, pra vc ver...
 ret
+
 debugMEM2:
+	mov si, ger_dados
 	mov cx, 10
 	.inicio:
 		lodsb
@@ -517,10 +561,13 @@ showAcc:                ;Mostra acc apontada por si
 	loop .inicio
 	call endl
 	
-	
+
+
 	call printInt
 	call printInt
 	call getchar; programa para, pra vc ver...
+	;mov al, 'K'
+	;call putchar
 ret
 
 start:
