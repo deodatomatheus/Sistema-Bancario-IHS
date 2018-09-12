@@ -59,7 +59,7 @@ cadastro:
 	call alocar
 	mov word[aux], cx
 	mov si, dx;??????????/ oq isso faz?
-re_cadastro:	
+	re_cadastro:	
 	mov cx, [aux]									
 	cmp cx, 10 									;TAMANHO DO BANCO DE DADOS
 	jle .valido
