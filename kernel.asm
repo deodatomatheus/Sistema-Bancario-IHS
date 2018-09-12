@@ -45,6 +45,11 @@ jmp 0x0000:start
 	aux_busca_dados dw 0
 ;------- LISTAR CONTAS
 	func_listar_contas db 'Contas cadastradas:', 13, 10, 0
+;------- EDITAR
+	func_editar db 'Editando a conta', 13, 10, 0
+	aux_editar dw 0
+;------- tostring
+	aux_to_string times 7 db 0
 ;-----------------------------------------------------------------------------------------------------------
 
 
@@ -53,8 +58,8 @@ cadastro:
 
 	call alocar
 	mov word[aux], cx
-	mov si, dx
-	
+	mov si, dx;??????????/ oq isso faz?
+re_cadastro:	
 	mov cx, [aux]									
 	cmp cx, 10 									;TAMANHO DO BANCO DE DADOS
 	jle .valido
@@ -182,6 +187,59 @@ busca:
 ret
 
 editar:
+	call setVideoMode  ;limpar a tela
+	;------------------------------LEITURA DO CONTA PARA BUSCA---------------------------------
+	mov si, digitar_num_conta
+	call printStr
+
+	call getinteger
+	mov ax, [numero]
+	mov word[conta_busca], ax
+	
+	;call debugMEM2
+	
+	;----------------------------BUSCA---------------------------------------- [WIP]
+	;CHECANDO A INTEGRIDADE DO CAMPO
+	mov si, ger_dados
+	mov word[aux_busca_ger], si
+
+	mov cx, 0
+
+	.parser:
+		mov word[aux_busca], cx
+		mov si, word[aux_busca_ger]
+		lodsb
+		mov word[aux_busca_ger] ,si
+
+		cmp al, 1
+		jne .espaco_n_alocado
+			mov [aux], cx ;Guarda a posicao que deve ser mudada
+			mov si, dados			 	
+			mov cx, word[aux_busca]
+			mov ax, 37
+			mul cx
+			add si, ax			
+			add si, 35
+			lodsw			
+			cmp ax, word[conta_busca]
+			jne .conta_diferente
+			sub si, 37
+			mov word[aux_editar], si
+			mov si, func_editar
+			call printStr
+			mov si, word[aux_editar]
+			call showAcc
+			call re_cadastro
+			.conta_diferente:		
+		.espaco_n_alocado:
+	
+	mov cx, [aux_busca]
+	inc cx
+	cmp cx, 10	
+	jne .parser
+
+	call getchar	
+
 ret
 
 deletar:
@@ -555,26 +613,6 @@ seletor:
 
 ret
 
-printInt: ;; printa o numero de 4 digitos apontados por si
-	lodsw
-	mov cx, 4
-	mov bl, 10
-	.continuar2:
-		div bl
-        add ah, '0'
-        push ax
-        xor ah,ah
-	loop .continuar2
-
-    mov cx, 4
-    .continuar:
-		pop ax
-        mov al, ah
-        call putchar
-	loop .continuar
-	call endl
-ret
-
 showAcc:                ;Mostra acc apontada por si
 	mov cx, 33
 	pularLinha:
@@ -594,12 +632,28 @@ showAcc:                ;Mostra acc apontada por si
 		
 	loop .inicio
 	call endl
-	
 
+	lodsw
+	push si
 
-	call printInt
-	call printInt
+	mov di, aux_to_string
+	call tostring
+	mov si, aux_to_string
+	call printStr
+	call endl
 	
+	pop si
+	lodsw
+	push si
+	
+	mov di, aux_to_string
+	call tostring
+	mov si, aux_to_string
+	call printStr
+	call endl
+
+	pop si
+
 	;call getchar; programa para, pra vc ver...
 	;mov al, 'K'
 	;call putchar
