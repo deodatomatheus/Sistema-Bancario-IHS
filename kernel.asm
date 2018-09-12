@@ -16,7 +16,7 @@ jmp 0x0000:start
 	editar_conta db '3 - EDITAR CONTA', 13, 10, 0 
 	deletar_conta db '4 - DELETAR CONTA', 13, 10, 0
 	listar_agencias db '5 - LISTAR AGENCIAS', 13, 10, 0
-	listar_contas_de_uma_agencia db '6 - LISTAR CONTAS DE UMA AGENCIA', 13, 10, 0
+	listar_contas_de_uma_agencia db '6 - LISTAR CONTAS', 13, 10, 0
 	comando_invalido db '!!COMANDO INVALIDO!!', 13, 10, 0
 
 ;-------AREA DE STRINGS CADASTRO
@@ -43,6 +43,8 @@ jmp 0x0000:start
 	aux_busca dw 0
 	aux_busca_ger dw 0
 	aux_busca_dados dw 0
+;------- LISTAR CONTAS
+	func_listar_contas db 'Contas cadastradas:', 13, 10, 0
 ;-----------------------------------------------------------------------------------------------------------
 
 
@@ -107,7 +109,6 @@ cadastro:
 		mov ax, [numero] 	;valor lido em getinteger
 
 		stosw 
-		
 		 
 		;------------------------------LIUTURA NUMERO DA CONTA----------------------------------
 		; pegando os valores como 'inteiro' pra ser mais facil de procurar
@@ -124,14 +125,12 @@ cadastro:
 		stosw 
 		;	------------------------DEBUG-----------------------
 		;printa os dados dos usuarios
-		mov si,dados	
-		
+		mov si,dados			
 		
 		call debugMEM
 	
 	.done:
 ret
-
   
 busca:
 	call setVideoMode  ;limpar a tela
@@ -192,6 +191,40 @@ listar_agencia:
 ret
 
 listar_contas:
+
+	call setVideoMode ;resetar a tela
+	mov si, func_listar_contas
+	call printStr
+
+	;----------------------------LISTAR CONTAS--------------------------------
+	;CHECANDO A INTEGRIDADE DO CAMPO
+	mov si, ger_dados
+	mov word[aux_busca_ger], si
+
+	mov cx, 0
+
+	.parser:
+		mov word[aux_busca], cx
+		mov si, word[aux_busca_ger]
+		lodsb
+		mov word[aux_busca_ger] ,si
+
+		cmp al, 1
+		jne .espaco_n_alocado
+			mov si, dados			 	
+			mov cx, word[aux_busca]
+			mov ax, 37
+			mul cx
+			add si, ax
+			call showAcc					
+		.espaco_n_alocado:
+	
+	mov cx, [aux_busca]
+	inc cx
+	cmp cx, 10	
+	jne .parser
+
+	call getchar	
 ret
 
 seta_base:
@@ -386,17 +419,16 @@ gets:
 		inc cx
 		call putchar
 
-		jmp .loop1
-	;gets:
-	;.loop1:
-		.backspace:
-			cmp cx, 0		; is empty?
-			je .loop1
-			dec di
-			dec cx
-			mov byte[di], 0
-			call delchar
-		jmp .loop1
+	jmp .loop1
+	
+	.backspace:
+		cmp cx, 0		; is empty?
+		je .loop1
+		dec di
+		dec cx
+		mov byte[di], 0
+		call delchar
+	jmp .loop1
 	.done:
 	mov al, 0
 	stosb
@@ -567,7 +599,8 @@ showAcc:                ;Mostra acc apontada por si
 
 	call printInt
 	call printInt
-	call getchar; programa para, pra vc ver...
+	
+	;call getchar; programa para, pra vc ver...
 	;mov al, 'K'
 	;call putchar
 ret
