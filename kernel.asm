@@ -29,6 +29,7 @@ jmp 0x0000:start
 ;-------BANCO DE DADOS
 	dados times 370 db 0 ;banco de dados suficiente para 10 pessoas
 	numero dw 0
+	ger_dados times 10 db 0
 	
 	 ;gerencia o espaco de dados, funciona como um mapa de posicoes alocadas ou nao
 							;SE MUDAR O TAMNAHO PRECISA MUDAR TAMBEM EM 'alocar' E EM 'cadastro'							
@@ -44,15 +45,15 @@ jmp 0x0000:start
 	aux_busca_dados dw 0
 ;-----------------------------------------------------------------------------------------------------------
 
-ger_dados times 10 db 0
+
 cadastro:
 	call setVideoMode ;apagar o menu
 
 	call alocar
 	mov word[aux], cx
-	call debugMEM2
-	call endl
-												
+	mov si, dx
+	
+	mov cx, [aux]									
 	cmp cx, 10 									;TAMANHO DO BANCO DE DADOS
 	jle .valido
 		mov si, banco_cheio
@@ -71,26 +72,26 @@ cadastro:
 
 		mov bx, 20 	;tamanho maximo do NOME
 		call gets 	;pega uma string de tamanho bx + \0
-
 		mov bx, 20	
+		mov [aux2], bx
+			
 		call completa_com_0	;poe cl - bl * 0 na area apontada por di		
-	
+
 		;--------------------------LEITURA CPF-------------------------------------------------
 		mov si, digitar_cpf	
 		call printStr
 			
 		call seta_base
-		call debugMEM2
-		call endl
+		
 		add di, 21				;setando a posicao correta na estrutura
 
 		mov bx, 11 				;tamanho do CPF
 		call gets 				;pega uma string de tamanho bx + \0	
-
-		mov bx, 11				;setando a posicao correta da estrutura
-		call completa_com_0 	;poe cl - bl * 0 na area apontada por di
 		
-
+		 
+		mov bx, 11				;setando a posicao correta da estrutura
+		mov [aux2], bx
+		call completa_com_0 	;poe cl - bl * 0 na area apontada por di
 		;------------------------------LIUTURA CODIGO DA CONTA----------------------------------
 		; pegando os valores como 'inteiro' pra ser mais facil de procurar
 		mov si, digitar_cod_agencia
@@ -102,10 +103,12 @@ cadastro:
 
 		add di, 33		;setando a posicao correta na estrutura
 
+
 		mov ax, [numero] 	;valor lido em getinteger
 
 		stosw 
 		
+		 
 		;------------------------------LIUTURA NUMERO DA CONTA----------------------------------
 		; pegando os valores como 'inteiro' pra ser mais facil de procurar
 		mov si, digitar_num_conta
@@ -121,9 +124,8 @@ cadastro:
 		stosw 
 		;	------------------------DEBUG-----------------------
 		;printa os dados dos usuarios
-		mov si,dados
-		;call showAcc
-
+		mov si,dados	
+		
 		
 		call debugMEM
 	
@@ -381,17 +383,17 @@ gets:
 		je .loop1
 		   	 
 		stosb
-		inc cl
+		inc cx
 		call putchar
 
 		jmp .loop1
 	;gets:
 	;.loop1:
 		.backspace:
-			cmp cl, 0		; is empty?
+			cmp cx, 0		; is empty?
 			je .loop1
 			dec di
-			dec cl
+			dec cx
 			mov byte[di], 0
 			call delchar
 		jmp .loop1
@@ -420,10 +422,10 @@ ret
 completa_com_0:
 	mov al, 0
 	.teste:
-	cmp cl, bl
+	cmp cx, [aux2]
 	je .done
 	stosb
-	inc bl
+	inc cx
 	jmp .teste
 	.done:
 ret
