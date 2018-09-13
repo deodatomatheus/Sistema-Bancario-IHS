@@ -48,6 +48,11 @@ jmp 0x0000:start
 ;------- EDITAR
 	func_editar db 'Editando a conta', 13, 10, 0
 	aux_editar dw 0
+;------- LISTAR AGENCIAS
+	func_listar_agencias db 'Agencias cadastradas', 13, 10, 0
+	aux_agencias times 20 db 0
+	aux_ag_ger db 0
+	flag_aux_agencias db 0
 ;------- tostring
 	aux_to_string times 7 db 0
 ;-----------------------------------------------------------------------------------------------------------
@@ -183,6 +188,7 @@ busca:
 	cmp cx, 10	
 	jne .parser
 
+
 	call getchar	
 ret
 
@@ -246,6 +252,41 @@ deletar:
 ret
 
 listar_agencia:
+	call setVideoMode ;resetar a tela
+	mov si, func_listar_agencias
+	call printStr
+
+	;----------------------------LISTAR AGENCIAS--------------------------------
+	;CHECANDO A INTEGRIDADE DO CAMPO
+	mov si, ger_dados
+	mov word[aux_busca_ger], si
+
+	mov cx, 0
+
+	.parser:
+		mov word[aux_busca], cx
+		mov si, word[aux_busca_ger]
+		lodsb
+		mov word[aux_busca_ger] ,si
+
+		cmp al, 1
+		jne .espaco_n_alocado
+			mov si, dados			 	
+			mov cx, word[aux_busca]
+			mov ax, 37
+			mul cx
+			add si, ax
+			call showAg					
+		.espaco_n_alocado:
+	
+	mov cx, [aux_busca]
+	inc cx
+	cmp cx, 10	
+	jne .parser
+	
+
+	call limpa_aux_agencias
+	call getchar	
 ret
 
 listar_contas:
@@ -657,6 +698,54 @@ showAcc:                ;Mostra acc apontada por si
 	;call getchar; programa para, pra vc ver...
 	;mov al, 'K'
 	;call putchar
+ret
+
+showAg:                ;Mostra acc apontada por si
+	add si,33
+	lodsw
+	mov dx,ax			;guarda valor a agencia em dx
+	mov bl,0
+	mov cx, 10
+	mov si, aux_agencias
+	.verificaSeTem:
+		lodsw
+		cmp ax,dx
+		je nimprime
+	loop .verificaSeTem
+
+	mov ax,dx
+	xor dx,dx
+
+	mov dl,byte[aux_ag_ger] ; pega qtd de agencias mostradas até agr
+	mov di,aux_agencias     ; aponta para o vetor que guarda quais agencias ja foram mostradas
+	add di,dx               
+	add di,dx				; pula uma word para cada agencia amazenada no vetor aux_agencias
+	stosb
+	add dl,1
+	mov byte[aux_ag_ger], dl
+
+
+
+	mov di, aux_to_string
+	call tostring
+	mov si, aux_to_string
+	call printStr
+	call endl
+	
+	
+
+	nimprime:
+ret
+
+
+limpa_aux_agencias:
+	xor dx,dx
+	mov byte[aux_ag_ger], dl
+	mov cx,10
+	mov ax, 0
+	mov di, aux_agencias
+	repz stosw
+
 ret
 
 start:
