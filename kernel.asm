@@ -53,6 +53,8 @@ jmp 0x0000:start
 	aux_agencias times 20 db 0
 	aux_ag_ger db 0
 	flag_aux_agencias db 0
+;------- DELETE
+	conta_apagada db 'Conta apagada', 13, 10, 0
 ;------- tostring
 	aux_to_string times 7 db 0
 ;-----------------------------------------------------------------------------------------------------------
@@ -249,6 +251,54 @@ editar:
 ret
 
 deletar:
+	call setVideoMode  ;limpar a tela
+	;------------------------------LEITURA DO CONTA PARA BUSCA---------------------------------
+	mov si, digitar_num_conta
+	call printStr
+
+	call getinteger
+	mov ax, [numero]
+	mov word[conta_busca], ax
+	
+	;call debugMEM2
+	
+	;----------------------------BUSCA---------------------------------------- [WIP]
+	;CHECANDO A INTEGRIDADE DO CAMPO
+	mov si, ger_dados
+	mov word[aux_busca_ger], si
+
+	mov cx, 0
+
+	.parser:
+		mov word[aux_busca], cx
+		mov si, word[aux_busca_ger]
+		lodsb
+		mov word[aux_busca_ger] ,si
+
+		cmp al, 1
+		jne .espaco_n_alocado
+			mov si, dados			 	
+			mov cx, word[aux_busca]
+			mov ax, 37
+			mul cx
+			add si, ax			
+			add si, 35
+			lodsw			
+			cmp ax, word[conta_busca]
+			jne .conta_diferente
+			sub si, 37
+			call deleta_conta
+			.conta_diferente:		
+		.espaco_n_alocado:
+	
+	mov cx, [aux_busca]
+	inc cx
+	cmp cx, 10	
+	jne .parser
+
+	mov si, conta_apagada
+	call printStr
+	call getchar
 ret
 
 listar_agencia:
@@ -757,6 +807,15 @@ limpa_aux_agencias:
 	repz stosw
 
 ret
+
+deleta_conta:
+	mov si,ger_dados
+	repz lodsb
+	mov di,si
+	mov al,0
+	stosb 
+
+	
 
 start:
 	xor ax, ax
