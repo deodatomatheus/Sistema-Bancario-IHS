@@ -44,7 +44,7 @@ jmp 0x0000:start
 	aux_busca_ger dw 0
 	aux_busca_dados dw 0
 ;------- LISTAR CONTAS
-	func_listar_contas db 'Contas cadastradas:', 13, 10, 0
+	func_listar_contas db 'Digite uma agencia:', 13, 10, 0
 ;------- EDITAR
 	func_editar db 'Editando a conta', 13, 10, 0
 	aux_editar dw 0
@@ -295,6 +295,10 @@ listar_contas:
 	mov si, func_listar_contas
 	call printStr
 
+	call getinteger
+	mov ax, [numero]
+	mov word[conta_busca], ax
+
 	;----------------------------LISTAR CONTAS--------------------------------
 	;CHECANDO A INTEGRIDADE DO CAMPO
 	mov si, ger_dados
@@ -314,8 +318,14 @@ listar_contas:
 			mov cx, word[aux_busca]
 			mov ax, 37
 			mul cx
-			add si, ax
-			call showAcc					
+			add si, ax			
+			add si, 33
+			lodsw			
+			cmp ax, word[conta_busca]
+			jne .conta_diferente
+			sub si, 35
+			call showAcc
+			.conta_diferente:		
 		.espaco_n_alocado:
 	
 	mov cx, [aux_busca]
