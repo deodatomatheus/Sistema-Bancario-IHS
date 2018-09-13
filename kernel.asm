@@ -667,52 +667,8 @@ debugMEM2:
 	call getchar; programa para, pra vc ver...
 ret
 
-seletor:
 
-	cmp al, '1'
-	je set_cadastro
-	
-	cmp al, '2' 
-	je set_busca
-	
-	cmp al, '3'
-	je set_editar
-	
-	cmp al, '4'
-	je set_deletar
-	
-	cmp al, '5'
-	je set_listar_agencia
-	
-	cmp al, '6'
-	je set_listar_contas
 
-	jmp fim
-
-	set_cadastro:
-	call cadastro ; opcao 1
-	jmp fim
-	
-	set_busca:
-	call busca ;opcao 2
-	jmp fim
-	
-	set_editar:
-	call editar;opcao 3
-	jmp fim
-	
-	set_deletar:
-	call deletar ;opcao 4
-	jmp fim
-
-	set_listar_agencia:
-	call listar_agencia ;opcao 5
-	jmp fim
-
-	set_listar_contas:
-	call listar_contas ;opcao 6
-
-ret
 
 showAcc:                ;Mostra acc apontada por si
 	mov cx, 33
@@ -792,7 +748,6 @@ showAg:                ;Mostra acc apontada por si
 	call printStr
 	call endl
 	
-	
 
 	nimprime:
 ret
@@ -821,15 +776,76 @@ start:
 	xor ax, ax
 	mov ds, ax
 	mov es, ax
+
+	mov ax, 0
+	mov ds, ax
+	mov di, 0x0080
+	mov word[di],     interrupt
+	mov word[di + 2], 0
+
+	xor ax, ax
+	mov ds, ax
+
+
 	exibe_menu:
 	call setVideoMode
 
 	call printMenu ;opcao selecionada fica em al
-	
-	call seletor
+	xor ah,ah
+	int 20h ;substitui seletor por int dentro dela estão todas as funções principas do programa.
 	
 	jmp fim
 
 fim:
 	jmp exibe_menu
 	jmp $
+
+interrupt:
+
+	;--cadastro
+	cmp ax, '1'
+	je .cadastro
+
+	cmp ax, '2'
+	je .busca
+
+	cmp ax, '3'
+	je .editar
+
+	cmp ax, '4'
+	je .deletar
+
+	cmp ax, '5'
+	je .listar_agencia
+
+	cmp ax, '6'
+	je .listar_contas
+	
+
+	.cadastro:
+	call cadastro
+	jmp .termina
+
+	.busca:
+	call busca
+	jmp .termina
+
+	.editar:
+	call editar
+	jmp .termina
+
+	.deletar:
+	call deletar
+	jmp .termina
+
+	.listar_agencia:
+	call listar_agencia
+	jmp .termina
+
+	.listar_contas:
+	call listar_contas
+	jmp .termina
+
+	.termina:
+
+iret
