@@ -29,9 +29,8 @@ jmp 0x0000:start
 ;-------BANCO DE DADOS
 	dados times 370 db 0 ;banco de dados suficiente para 10 pessoas
 	numero dw 0
-	ger_dados times 10 db 0
-	
-	 ;gerencia o espaco de dados, funciona como um mapa de posicoes alocadas ou nao
+	ger_dados times 10 db 0	
+							;gerencia o espaco de dados, funciona como um mapa de posicoes alocadas ou nao
 							;SE MUDAR O TAMNAHO PRECISA MUDAR TAMBEM EM 'alocar' E EM 'cadastro'							
 							;usado no loop da funcao busca
 	aux dw 0				;usado em cadastro para guardar o valor do lugar que foi alocado
@@ -57,6 +56,12 @@ jmp 0x0000:start
 	conta_apagada db 'Conta apagada', 13, 10, 0
 ;------- tostring
 	aux_to_string times 7 db 0
+;-------ShowACC
+	S_CORTA_PAG db '-----------------------------', 13, 10, 0
+	S_NOME 		db 'NOME:    ', 0
+	S_AGENCIA 	db 'AGENCIA: ', 0
+	S_CONTA 	db 'CONTA:   ', 0
+	S_CPF 		db 'CPF:     ', 0
 ;-----------------------------------------------------------------------------------------------------------
 
 
@@ -136,11 +141,7 @@ cadastro:
 		mov ax, [numero]	;valor lido em getinteger	
 		stosw 
 		;	------------------------DEBUG-----------------------
-		;printa os dados dos usuarios
-		mov si,dados			
-		
-		call debugMEM
-	
+		;printa os dados dos usuarios	
 	.done:
 ret
   
@@ -667,53 +668,68 @@ debugMEM2:
 	call getchar; programa para, pra vc ver...
 ret
 
-
-
-
 showAcc:                ;Mostra acc apontada por si
+	pusha
+	mov si, S_CORTA_PAG
+	call printStr
+	popa
 	mov cx, 33
-	pularLinha:
+	
+	.pularLinha:
 		call endl
+		
+	.nome:
+		pusha
+		mov si, S_NOME
+		call printStr
+		popa
+		jmp .continua
+	.cpf:
+		call endl
+		pusha
+		mov si, S_CPF
+		call printStr
+		popa
 		jmp .continua
 	.inicio:
-		cmp cx, 33-21
-	 	je pularLinha
+		cmp cx, 12
+	 	je .cpf
 		
 		.continua:
 		lodsb
 		cmp al, 0
-		jne .normal
-		mov al, '-'
-		.normal:
 		call putchar
 		
 	loop .inicio
 	call endl
 
+	pusha 
+		mov si, S_AGENCIA
+		call printStr
+	popa
+
 	lodsw
 	push si
-
-	mov di, aux_to_string
-	call tostring
-	mov si, aux_to_string
-	call printStr
-	call endl
-	
+		mov di, aux_to_string
+		call tostring
+		mov si, aux_to_string
+		call printStr
+		call endl		
 	pop si
+
+	pusha 
+		mov si, S_CONTA
+		call printStr
+	popa
+
 	lodsw
-	push si
-	
-	mov di, aux_to_string
-	call tostring
-	mov si, aux_to_string
-	call printStr
-	call endl
-
+	push si		
+		mov di, aux_to_string
+		call tostring
+		mov si, aux_to_string
+		call printStr
+		call endl
 	pop si
-
-	;call getchar; programa para, pra vc ver...
-	;mov al, 'K'
-	;call putchar
 ret
 
 showAg:                ;Mostra acc apontada por si
@@ -752,7 +768,6 @@ showAg:                ;Mostra acc apontada por si
 	nimprime:
 ret
 
-
 limpa_aux_agencias:
 	xor dx,dx
 	mov byte[aux_ag_ger], dl
@@ -769,8 +784,7 @@ deleta_conta:
 	mov di,si
 	mov al,0
 	stosb 
-
-	
+ret	
 
 start:
 	xor ax, ax
